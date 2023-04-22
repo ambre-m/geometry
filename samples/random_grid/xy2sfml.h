@@ -20,6 +20,6 @@ struct geometry::screen::ScreenTraits<sf::Vector2f> {
   static float const& y(point const& p) { return p.y; }
 };
 
-using xy2sf = geometry::screen::ScreenTransformation<sf::Vector2f>;
+using xy2sfml = geometry::screen::ScreenTransformation<sf::Vector2f>;
 
 #endif

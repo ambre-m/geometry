@@ -6,7 +6,7 @@
 
 class SFFlatTopHex : public sf::Drawable, public sf::Transformable {
 public:
-  SFFlatTopHex(xy2sf const& screener, sf::Color color):
+  SFFlatTopHex(xy2sfml const& screener, sf::Color color):
     m_vertices{sf::PrimitiveType::LineStrip, 7}
   {
     auto corners = geometry::hex::FlatTop::corners();

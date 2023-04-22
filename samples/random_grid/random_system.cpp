@@ -59,9 +59,13 @@ struct Stellar {
 struct StarSystem {
 public:
   using grid_type = grid<Stellar>;
-  using index_type = grid_type::index_type;
+  using index_type = grid_type::key_type;
+  using point_type = grid_type::indexed_type;
 
-  explicit StarSystem(std::mt19937 & generator, index_type planets = 15):m_planets(planets), m_gen(generator) {
+  explicit StarSystem(std::mt19937 & generator, index_type planets = 15):
+    m_planets(planets),
+    m_gen(generator)
+  {
     recreate();
   }
 
@@ -70,7 +74,7 @@ public:
     m_map.set(0, sol);
 
     while (m_map.size() < m_planets) {
-      int i = index_distr(m_gen);
+      auto i = index_distr(m_gen);
       // don't replace sol;
       if (m_map.contains(i)) continue;
 
@@ -85,14 +89,25 @@ public:
   }
   
   auto size() const { return m_map.size(); }
-  index_type radius() const { return m_map.radius(); }
+  index_type radius() const { return m_map.bounds().radius(); }
   index_type area() const { return m_map.area(); }
   
-  decltype(auto) surface() const { return m_map.surface(); }
-  decltype(auto) values() const { return m_map.values(); }
-  decltype(auto) values() { return m_map.values(); }
+  decltype(auto) surface() const { return m_map.bounds(); }
+  decltype(auto) positions() const { return m_map.positions(); }
   
-  Stellar& set(index_type i, Stellar const& s) { return m_map.set(i, s); }
+  point_type index_to_position(index_type i) const {
+    return m_map.position_at(i);
+  }
+
+  hex::xy index_to_xy(index_type i) const {
+    return hex::FlatTop::to_xy(index_to_position(i));
+  }
+
+  decltype(auto) values() const { return m_map.mappings(); }
+  decltype(auto) values() { return m_map.mappings(); }
+
+private:
+  bool set(index_type i, Stellar const& s) { return m_map.set(i, s) != nullptr; }
   
 private:
   grid<Stellar> m_map{7};
@@ -145,7 +160,7 @@ int main(int argc, char ** argv) {
   window.setVerticalSyncEnabled(true);
 
  
-  xy2sf screener{ {300, 300}, {20, -20} };
+  xy2sfml screener{ {300, 300}, {20, -20} };
 
   auto grid_cell = SFFlatTopHex(screener, sf::Color::Red);
   
@@ -158,7 +173,7 @@ int main(int argc, char ** argv) {
 
   // initialize placement of planets
   for (auto& [pos, stellar] : map.values()) {
-    stellar.shape.setPosition(screener(hex::FlatTop::to_xy(pos)));
+    stellar.shape.setPosition(screener(map.index_to_xy(pos)));
   }
   
   while (window.isOpen()) {
@@ -172,7 +187,7 @@ int main(int argc, char ** argv) {
           } else if (event.key.code == sf::Keyboard::Space) {
             map.recreate();
             for (auto& [pos, stellar] : map.values()) {
-              stellar.shape.setPosition(screener(hex::FlatTop::to_xy(pos)));
+              stellar.shape.setPosition(screener(map.index_to_xy(pos)));
             }
           }
         }
@@ -182,15 +197,15 @@ int main(int argc, char ** argv) {
       
       window.draw(txt_title);
       
-      for(auto const& p : map.surface()) {
-        grid_cell.setPosition( screener(hex::FlatTop::to_xy(p)) );
+      for(auto const& pos : map.positions()) {
+        grid_cell.setPosition( screener(hex::FlatTop::to_xy(pos)) );
         window.draw(grid_cell);
       }
       
       for (int i = 0; auto const& [pos, stellar] : map.values()) {
         window.draw(stellar.shape);
         txt_planet.setFillColor(stellar.shape.getFillColor());
-        txt_planet.setString(to_string(pos));
+        txt_planet.setString(to_string(map.index_to_position(pos)));
         txt_planet.setPosition(600.f, 60.f + 25.f*i);
         window.draw(txt_planet);
         
