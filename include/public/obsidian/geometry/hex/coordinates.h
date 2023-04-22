@@ -124,6 +124,11 @@ private:
 };
 
 
+
+static_assert( basic_hex<int, true>{-1,2}.q() == -1, "algorithmic error");
+static_assert( basic_hex<int, true>{-1,2}.r() == 2, "algorithmic error");
+
+
 template <typename T, bool vector>
 constexpr bool operator == (basic_hex<T,vector> const& a, basic_hex<T,vector> const& b) {
   return a.q() == b.q() && a.r() == b.r();
